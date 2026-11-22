@@ -1,0 +1,12 @@
+# Too many tabs
+
+> Two free, open-source browser extensions: Agent Browser Bridge, which connects AI agents to your real browser over MCP, and JumpAround, a Cmd+K fuzzy tab switcher for Chrome.
+
+## Extensions
+
+- [Agent Browser Bridge](https://lanxiao.dev/#agent-bridge): Chrome and Safari extension plus a local MCP server. Connects Claude Code, Cursor, VS Code or any MCP client to the user's own browser, with their real tabs and signed-in sessions. Agents can organise tabs and windows, search history, bookmarks and the Reading List, act on pages (inspect, screenshot, click, type, scroll), and chat from Chrome's side panel. Several agents can share one browser. Requires Node.js 20+. Download: https://github.com/lx223/agent-bridge-browser-extension/releases. Source: https://github.com/lx223/agent-bridge-browser-extension
+- [JumpAround](https://lanxiao.dev/#jumparound): Free keyboard tab switcher for Chrome. Press Cmd+K (macOS) or Ctrl+K (Windows/Linux) and fuzzy-search open tabs. Install: https://chromewebstore.google.com/detail/kgjjlongdlmjcegnjicbpnkpnmoblkae. Source: https://github.com/lx223/jumparound-browser-extension
+
+## Optional
+
+- [This page as Markdown](https://lanxiao.dev/index.md)

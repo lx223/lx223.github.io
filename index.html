@@ -1,1 +1,639 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="shortcut icon" href="/favicon.ico"><title>React App</title><link href="/static/css/main.9a0fe4f1.css" rel="stylesheet"></head><body><div id="root"></div><script type="text/javascript" src="/static/js/main.c984fca3.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Too many tabs</title>
+  <meta name="description" content="Two free, open-source browser extensions: Agent Browser Bridge connects AI agents to your real browser over MCP, and JumpAround is a Cmd+K fuzzy tab switcher for Chrome.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#14163a">
+  <link rel="canonical" href="https://lanxiao.dev/">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="alternate" type="text/markdown" href="/index.md" title="This page as Markdown">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="Summary for language models">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://lanxiao.dev/#site",
+        "url": "https://lanxiao.dev/",
+        "name": "Too many tabs",
+        "description": "Two free, open-source browser extensions: Agent Browser Bridge and JumpAround."
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://lanxiao.dev/#agent-bridge",
+        "name": "Agent Browser Bridge",
+        "applicationCategory": "BrowserApplication",
+        "operatingSystem": "Chrome, Safari",
+        "description": "Browser extension and local MCP server that lets Claude Code, Cursor, VS Code or any MCP client use your own browser, with your real tabs and signed-in sessions: organise tabs, search history and bookmarks, act on pages, and chat from Chrome's side panel.",
+        "url": "https://lanxiao.dev/#agent-bridge",
+        "codeRepository": "https://github.com/lx223/agent-bridge-browser-extension",
+        "downloadUrl": "https://github.com/lx223/agent-bridge-browser-extension/releases",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://lanxiao.dev/#jumparound",
+        "name": "JumpAround",
+        "applicationCategory": "BrowserApplication",
+        "operatingSystem": "Chrome",
+        "description": "Keyboard tab switcher for Chrome: press Cmd+K or Ctrl+K and fuzzy-search your open tabs.",
+        "url": "https://lanxiao.dev/#jumparound",
+        "installUrl": "https://chromewebstore.google.com/detail/kgjjlongdlmjcegnjicbpnkpnmoblkae",
+        "codeRepository": "https://github.com/lx223/jumparound-browser-extension",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" }
+      }
+    ]
+  }
+  </script>
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://lanxiao.dev/">
+  <meta property="og:title" content="Too many tabs">
+  <meta property="og:description" content="Agent Browser Bridge and JumpAround: two browser extensions for people with too many tabs.">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,300..800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --night: #14163a;
+      --night-deep: #0c0d26;
+      --glow: #2b2f7a;
+      --ink: #eef0ff;
+      --muted: #a9addb;
+      --tab: rgba(255, 255, 255, .07);
+      --tab-line: rgba(255, 255, 255, .14);
+
+      /* Chrome tab-group colours, dark-theme tints */
+      --blue: #8ab4f8; --red: #f28b82; --yellow: #fdd663; --green: #81c995;
+      --pink: #ff8bcb; --purple: #c58af9; --cyan: #78d9ec; --orange: #fcad70;
+
+      --font: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+      --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html {
+      background: var(--night-deep);
+      color: var(--ink);
+      font-family: var(--font);
+      -webkit-text-size-adjust: 100%;
+    }
+    body { margin: 0; font-size: 1.0625rem; line-height: 1.55; font-variation-settings: "opsz" 14; }
+    a { color: inherit; text-underline-offset: .22em; text-decoration-thickness: 1px; }
+    :focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; border-radius: 4px; }
+
+    kbd {
+      display: inline-block; min-width: 1.6em; padding: .05em .45em;
+      border: 1px solid var(--tab-line); border-bottom-width: 2px; border-radius: 6px;
+      background: rgba(255, 255, 255, .06); color: var(--ink);
+      font: 500 .75rem/1.5 var(--mono); text-align: center;
+    }
+
+    /* ---------- The tab field ---------- */
+    .stage {
+      position: relative;
+      height: 100vh; height: 100svh; min-height: 34rem;
+      overflow: hidden;
+      background:
+        radial-gradient(60rem 40rem at 70% 20%, rgba(197, 138, 249, .16), transparent 60%),
+        radial-gradient(50rem 36rem at 15% 85%, rgba(138, 180, 248, .14), transparent 60%),
+        linear-gradient(180deg, var(--night) 0%, var(--night-deep) 100%);
+      isolation: isolate;
+    }
+    .stage::after { /* fine grain so the gradients don't band */
+      content: ""; position: absolute; inset: 0; z-index: -1; opacity: .35; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .field { position: absolute; inset: 0; }
+
+    .ftab {
+      position: absolute; left: 0; top: 0;
+      display: flex; align-items: center; gap: .55rem;
+      height: 2.5rem; padding: 0 .4rem 0 .8rem;
+      border-radius: 12px 12px 4px 4px;
+      background: var(--tab);
+      border: 1px solid var(--tab-line);
+      border-top: 3px solid var(--g);
+      color: var(--ink);
+      font-size: .875rem; font-weight: 500; white-space: nowrap;
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px -12px rgba(0, 0, 0, .6);
+      cursor: grab; user-select: none; -webkit-user-select: none;
+      touch-action: none;
+      will-change: transform;
+    }
+    .ftab.dragging { cursor: grabbing; z-index: 5; box-shadow: 0 20px 40px -12px rgba(0, 0, 0, .7); }
+    .ftab.link .t { text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--g) 60%, transparent); text-underline-offset: .25em; }
+    .ftab .fav {
+      width: 1rem; height: 1rem; border-radius: 4px; flex: none;
+      background: var(--g);
+      display: grid; place-items: center;
+      color: var(--night-deep); font: 700 .625rem/1 var(--font); font-style: normal;
+    }
+    .ftab .x {
+      display: grid; place-items: center;
+      width: 1.5rem; height: 1.5rem; border-radius: 50%;
+      border: 0; background: transparent; color: var(--muted);
+      font: 400 1.05rem/1 var(--font); cursor: pointer;
+    }
+    .ftab .x:hover { background: rgba(255, 255, 255, .12); color: var(--ink); }
+    .ftab.closing { transition: transform .22s ease-in, opacity .22s ease-in; opacity: 0; }
+
+    /* Name and line, sitting among the tabs */
+    .hello {
+      position: absolute; z-index: 3;
+      left: clamp(1.25rem, 7vw, 7rem); top: 50%; transform: translateY(-55%);
+      max-width: min(40rem, calc(100% - 2.5rem));
+      pointer-events: none;
+    }
+    .hello h1 {
+      margin: 0;
+      font-size: clamp(4rem, 2rem + 10vw, 10.5rem);
+      font-weight: 800;
+      font-variation-settings: "opsz" 96, "wdth" 75;
+      line-height: .9;
+      letter-spacing: -.015em;
+      background: linear-gradient(100deg, #fff 0%, #fff 45%, var(--pink) 75%, var(--yellow) 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      text-shadow: none;
+    }
+    .hello p {
+      margin: 1.25rem 0 0;
+      max-width: 26ch;
+      font-size: clamp(1.2rem, 1rem + .8vw, 1.55rem);
+      line-height: 1.3;
+      color: var(--ink);
+      font-variation-settings: "opsz" 32;
+    }
+
+    .hud {
+      position: absolute; z-index: 4; right: clamp(1rem, 3vw, 2rem); top: clamp(1rem, 3vw, 1.75rem);
+      display: flex; align-items: center; gap: .75rem;
+    }
+    .count {
+      display: grid; place-items: center;
+      min-width: 2rem; height: 2rem; padding: 0 .4rem;
+      border: 2px solid var(--ink); border-radius: 7px;
+      font: 700 .875rem/1 var(--font);
+    }
+    .hud button {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .4rem .7rem; border-radius: 999px;
+      border: 1px solid var(--tab-line); background: rgba(255, 255, 255, .06);
+      color: var(--ink); font: 500 .875rem var(--font); cursor: pointer;
+    }
+    .hud button:hover { background: rgba(255, 255, 255, .12); }
+
+    .tip {
+      position: absolute; z-index: 4; left: 50%; bottom: clamp(1rem, 3vw, 2rem); transform: translateX(-50%);
+      margin: 0; color: var(--muted); font-size: .875rem; text-align: center; white-space: nowrap;
+    }
+    .tip button { all: unset; cursor: pointer; color: var(--yellow); text-decoration: underline; text-underline-offset: .2em; }
+    .tip button:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+
+    /* ---------- Below the field ---------- */
+    .made {
+      max-width: 72rem; margin: 0 auto;
+      padding: clamp(4rem, 10vw, 8rem) clamp(1.25rem, 7vw, 7rem) clamp(3rem, 8vw, 6rem);
+    }
+    .made h2 {
+      margin: 0 0 clamp(2rem, 5vw, 3.5rem);
+      max-width: 18ch;
+      font-size: clamp(2rem, 1.2rem + 3vw, 3.5rem);
+      font-weight: 700;
+      font-variation-settings: "opsz" 72, "wdth" 80;
+      line-height: 1;
+      letter-spacing: -.025em;
+    }
+    .things { display: grid; gap: clamp(1.5rem, 3vw, 2.5rem); grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); }
+
+    .thing {
+      position: relative;
+      padding: 0 0 1.75rem;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
+      border: 1px solid var(--tab-line);
+      overflow: hidden;
+    }
+    /* each one wears its own browser chrome */
+    .chrome {
+      display: flex; align-items: flex-end; gap: .4rem;
+      padding: .7rem .9rem 0;
+      background: rgba(0, 0, 0, .22);
+    }
+    .chrome .lights { display: flex; gap: .35rem; margin: 0 .5rem .7rem 0; }
+    .chrome .lights i { width: .65rem; height: .65rem; border-radius: 50%; background: rgba(255, 255, 255, .18); }
+    .chrome .tabname {
+      padding: .45rem .9rem; border-radius: 10px 10px 0 0;
+      background: color-mix(in srgb, var(--g) 14%, #1b1d45);
+      border-top: 3px solid var(--g);
+      font-size: .8125rem; font-weight: 500; color: var(--ink);
+    }
+    .thing .body { padding: 1.5rem clamp(1.25rem, 3vw, 2rem) 0; }
+    .thing h3 {
+      margin: 0;
+      font-size: clamp(1.6rem, 1.2rem + 1.2vw, 2.2rem);
+      font-weight: 700;
+      font-variation-settings: "opsz" 48, "wdth" 85;
+      letter-spacing: -.015em; line-height: 1.05;
+      color: var(--g);
+    }
+    .thing p { margin: .9rem 0 0; max-width: 46ch; color: var(--ink); }
+    .thing .links { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.4rem; }
+    .thing .links a {
+      padding: .45rem .9rem; border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--g) 55%, transparent);
+      text-decoration: none; font-size: .9375rem; font-weight: 500;
+    }
+    .thing .links a:hover { background: color-mix(in srgb, var(--g) 18%, transparent); }
+    .thing .links a.primary { background: var(--g); color: var(--night-deep); border-color: var(--g); }
+    .thing .links a.primary:hover { filter: brightness(1.08); }
+
+    .bye {
+      max-width: 72rem; margin: 0 auto;
+      padding: 0 clamp(1.25rem, 7vw, 7rem) 3rem;
+      color: var(--muted);
+    }
+    .bye p { margin: 0; max-width: 60ch; }
+    .bye a { color: var(--ink); }
+
+    /* ---------- Jump palette ---------- */
+    dialog.palette {
+      width: min(36rem, calc(100vw - 2rem));
+      margin: 14vh auto auto; padding: 0;
+      border: 1px solid var(--tab-line); border-radius: 16px;
+      background: #1b1d45; color: var(--ink);
+      box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .7);
+      overflow: hidden;
+    }
+    dialog.palette::backdrop { background: rgba(8, 9, 28, .55); backdrop-filter: blur(3px); }
+    @media (prefers-reduced-motion: no-preference) {
+      dialog.palette[open] { animation: pop .14s ease-out; }
+      @keyframes pop { from { opacity: 0; transform: translateY(-6px) scale(.985); } }
+    }
+    .palette input {
+      width: 100%; padding: 1rem 1.1rem; border: 0; border-bottom: 1px solid var(--tab-line);
+      background: transparent; color: inherit; font: inherit; font-size: 1.0625rem;
+    }
+    .palette input:focus { outline: none; }
+    .palette input::placeholder { color: var(--muted); }
+    .palette ul { list-style: none; margin: 0; padding: .4rem; max-height: 50vh; overflow-y: auto; }
+    .palette li {
+      display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+      padding: .55rem .7rem; border-radius: 9px; cursor: pointer;
+    }
+    .palette li[aria-selected="true"] { background: rgba(255, 255, 255, .09); }
+    .palette li .kind { color: var(--muted); font-size: .8125rem; white-space: nowrap; }
+    .palette li mark { background: none; color: var(--yellow); font-weight: 650; }
+    .palette .empty { padding: 1rem 1.1rem; color: var(--muted); }
+    .palette .keys { display: flex; gap: 1rem; padding: .6rem 1.1rem; border-top: 1px solid var(--tab-line); color: var(--muted); font-size: .8125rem; }
+
+    @media (hover: none) and (pointer: coarse) {
+      .hud kbd, .palette .keys, .tip .keyhint { display: none; }
+    }
+    @media (max-width: 40rem) {
+      .hello { top: 42%; }
+      .ftab { height: 2.2rem; font-size: .8125rem; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="stage" aria-labelledby="name">
+      <div class="field" aria-hidden="true"></div>
+
+      <div class="hello">
+        <h1 id="name">Too many tabs.</h1>
+        <p>Two browser extensions for taming them, and for handing them to your AI agent.</p>
+      </div>
+
+      <div class="hud">
+        <button type="button" data-open-palette aria-haspopup="dialog" aria-label="Jump to">Jump <kbd data-mod>⌘</kbd><kbd>K</kbd></button>
+        <span class="count" title="Tabs open" aria-hidden="true">0</span>
+      </div>
+
+      <p class="tip" aria-live="polite"><span class="msg">Drag them around. Close a few.</span></p>
+    </section>
+
+    <section class="made" id="made" aria-labelledby="made-h">
+      <h2 id="made-h">Free and open source</h2>
+      <div class="things">
+        <article class="thing" id="agent-bridge" style="--g: var(--purple)">
+          <div class="chrome" aria-hidden="true"><span class="lights"><i></i><i></i><i></i></span><span class="tabname">Agent Browser Bridge</span></div>
+          <div class="body">
+            <h3>Agent Browser Bridge</h3>
+            <p>Let Claude Code, Cursor or any MCP agent use the browser you’re already in, with your real tabs and logins. It can tidy your tabs, dig through history and bookmarks, and click around pages, and you can chat to it from Chrome’s side panel. Works with Chrome and Safari.</p>
+            <div class="links">
+              <a class="primary" href="https://github.com/lx223/agent-bridge-browser-extension/releases">Download</a>
+              <a href="https://github.com/lx223/agent-bridge-browser-extension">Source</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="thing" id="jumparound" style="--g: var(--yellow)">
+          <div class="chrome" aria-hidden="true"><span class="lights"><i></i><i></i><i></i></span><span class="tabname">JumpAround</span></div>
+          <div class="body">
+            <h3>JumpAround</h3>
+            <p>Chrome’s tab bar gives up at about twenty tabs. JumpAround gives you <kbd data-mod>⌘</kbd> <kbd>K</kbd> and fuzzy search instead, the same as the jump box on this page. Type a few letters, press Enter, and you’re there.</p>
+            <div class="links">
+              <a class="primary" href="https://chromewebstore.google.com/detail/kgjjlongdlmjcegnjicbpnkpnmoblkae">Add to Chrome</a>
+              <a href="https://github.com/lx223/jumparound-browser-extension">Source</a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+
+  <dialog class="palette" aria-label="Jump to">
+    <input type="text" placeholder="Jump to…" aria-label="Search"
+           role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" autocomplete="off" spellcheck="false">
+    <ul id="palette-list" role="listbox"></ul>
+    <div class="keys" aria-hidden="true">
+      <span><kbd>↑</kbd> <kbd>↓</kbd> move</span>
+      <span><kbd>↵</kbd> open</span>
+      <span><kbd>esc</kbd> close</span>
+    </div>
+  </dialog>
+
+  <script>
+  (() => {
+    const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+    if (!isMac) document.querySelectorAll("[data-mod]").forEach(k => k.textContent = "Ctrl");
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    /* ---------------- Floating tabs ---------------- */
+    const TABS = [
+      ["Agent Browser Bridge", "purple", "#agent-bridge"],
+      ["JumpAround", "yellow", "#jumparound"],
+      ["Add to Chrome", "green", "https://chromewebstore.google.com/detail/kgjjlongdlmjcegnjicbpnkpnmoblkae"],
+      ["Download the bridge", "blue", "https://github.com/lx223/agent-bridge-browser-extension/releases"],
+      ["⌘K to jump", "yellow"],
+      ["fuzzy search", "orange"],
+      ["MCP server", "cyan"],
+      ["side panel chat", "pink"],
+      ["Safari too", "blue"],
+      ["tab groups", "green"],
+      ["reading list (21)", "purple"],
+      ["history search", "cyan"],
+      ["bookmarks", "orange"],
+      ["screenshot this page", "red"],
+      ["Untitled", "purple"],
+      ["new tab", "orange"],
+      ["that article from Tuesday", "pink"],
+      ["localhost:5173", "green"],
+      ["47 unread", "red"],
+      ["the other tab", "yellow"],
+      ["click, type, scroll", "blue"],
+      ["recently closed", "red"],
+    ];
+
+    const stage = document.querySelector(".stage");
+    const field = stage.querySelector(".field");
+    const hello = stage.querySelector(".hello");
+    const countEl = stage.querySelector(".count");
+    const msg = stage.querySelector(".tip");
+    let bodies = [], W = 0, H = 0, closed = [];
+
+    const make = ([title, color, href]) => {
+      const el = document.createElement("div");
+      el.className = "ftab" + (href ? " link" : "");
+      el.style.setProperty("--g", `var(--${color})`);
+      el.innerHTML = `<i class="fav">${title.trim()[0].toUpperCase()}</i><span class="t"></span><button class="x" tabindex="-1" aria-hidden="true">×</button>`;
+      el.querySelector(".t").textContent = title;
+      field.appendChild(el);
+      const b = { el, href, data: [title, color, href], x: 0, y: 0, vx: 0, vy: 0, w: el.offsetWidth, h: el.offsetHeight, drag: null, rot: (Math.random() - .5) * 6 };
+      el.querySelector(".x").addEventListener("pointerdown", e => e.stopPropagation());
+      el.querySelector(".x").addEventListener("click", () => close(b));
+      el.addEventListener("pointerdown", e => grab(b, e));
+      return b;
+    };
+
+    const keepClear = [hello, stage.querySelector(".hud"), msg];
+    const obstacles = () => {
+      const s = stage.getBoundingClientRect();
+      return keepClear.map(el => el.getBoundingClientRect())
+        .map(r => ({ x: r.left - s.left - 12, y: r.top - s.top - 12, w: r.width + 24, h: r.height + 24 }));
+    };
+    const overlaps = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+
+    const place = b => {
+      const obs = obstacles();
+      for (let i = 0; i < 200; i++) {
+        b.x = Math.random() * Math.max(W - b.w, 1);
+        b.y = Math.random() * Math.max(H - b.h, 1);
+        const box = { x: b.x - 8, y: b.y - 8, w: b.w + 16, h: b.h + 16 };
+        if (!obs.some(o => overlaps(box, o)) && !bodies.some(o => o !== b && overlaps(box, o))) break;
+      }
+      const a = Math.random() * Math.PI * 2, sp = .25 + Math.random() * .35;
+      b.vx = Math.cos(a) * sp; b.vy = Math.sin(a) * sp;
+    };
+
+    const draw = b => { b.el.style.transform = `translate(${b.x}px, ${b.y}px) rotate(${b.drag ? 0 : b.rot}deg)`; };
+
+    const setCount = () => {
+      const n = bodies.length;
+      countEl.textContent = n > 99 ? ":D" : n;
+      if (n === 0) {
+        msg.innerHTML = 'All tabs closed. That never happens. <button type="button">Reopen them</button>';
+        msg.querySelector("button").addEventListener("click", reopenAll);
+      }
+    };
+
+    const close = b => {
+      bodies = bodies.filter(o => o !== b);
+      closed.push(b.data);
+      b.el.classList.add("closing");
+      b.el.style.transform += " scale(.6)";
+      setTimeout(() => b.el.remove(), 230);
+      setCount();
+    };
+
+    const reopenAll = () => {
+      msg.innerHTML = '<span class="msg">Drag them around. Close a few.</span>';
+      closed.splice(0).forEach(d => { const b = make(d); bodies.push(b); place(b); draw(b); });
+      setCount();
+    };
+
+    // Dragging and flinging
+    const grab = (b, e) => {
+      e.preventDefault();
+      b.el.setPointerCapture(e.pointerId);
+      b.el.classList.add("dragging");
+      b.drag = { ox: e.clientX - b.x, oy: e.clientY - b.y, sx: e.clientX, sy: e.clientY, lx: e.clientX, ly: e.clientY, lt: performance.now(), moved: false };
+      const move = ev => {
+        const d = b.drag, now = performance.now(), dt = Math.max(now - d.lt, 1);
+        b.vx = (ev.clientX - d.lx) / dt * 16; b.vy = (ev.clientY - d.ly) / dt * 16;
+        d.lx = ev.clientX; d.ly = ev.clientY; d.lt = now;
+        if (Math.hypot(ev.clientX - d.sx, ev.clientY - d.sy) > 4) d.moved = true;
+        b.x = ev.clientX - d.ox; b.y = ev.clientY - d.oy;
+        if (still) draw(b);
+      };
+      const up = () => {
+        b.el.removeEventListener("pointermove", move);
+        b.el.removeEventListener("pointerup", up);
+        b.el.removeEventListener("pointercancel", up);
+        b.el.classList.remove("dragging");
+        const clicked = !b.drag.moved;
+        b.drag = null;
+        if (still) { b.vx = b.vy = 0; draw(b); }
+        if (clicked && b.href) go(b.href);
+      };
+      b.el.addEventListener("pointermove", move);
+      b.el.addEventListener("pointerup", up);
+      b.el.addEventListener("pointercancel", up);
+    };
+
+    const go = href => {
+      if (href.startsWith("#")) {
+        const t = document.querySelector(href);
+        t.scrollIntoView({ behavior: still ? "auto" : "smooth" });
+        history.pushState(null, "", href);
+      } else location.href = href;
+    };
+
+    // Physics: gentle drift, walls, the name as an obstacle, tabs nudging each other.
+    let pointer = null;
+    stage.addEventListener("pointermove", e => { const s = stage.getBoundingClientRect(); pointer = { x: e.clientX - s.left, y: e.clientY - s.top }; });
+    stage.addEventListener("pointerleave", () => pointer = null);
+
+    const step = () => {
+      const obs = obstacles();
+      for (const b of bodies) {
+        if (b.drag) continue;
+        // keep a minimum cruising speed, cap the maximum
+        const sp = Math.hypot(b.vx, b.vy);
+        if (sp < .2) { b.vx *= 1.02; b.vy *= 1.02; if (sp < .01) { b.vx = .2; } }
+        if (sp > 14) { b.vx *= 14 / sp; b.vy *= 14 / sp; }
+        if (sp > .6) { b.vx *= .985; b.vy *= .985; }
+        // shy of the cursor
+        if (pointer) {
+          const cx = b.x + b.w / 2, cy = b.y + b.h / 2, dx = cx - pointer.x, dy = cy - pointer.y, d = Math.hypot(dx, dy);
+          if (d < 120 && d > 0) { const f = (120 - d) / 120 * .35; b.vx += dx / d * f; b.vy += dy / d * f; }
+        }
+        b.x += b.vx; b.y += b.vy;
+        if (b.x < 0) { b.x = 0; b.vx = Math.abs(b.vx); }
+        if (b.y < 0) { b.y = 0; b.vy = Math.abs(b.vy); }
+        if (b.x + b.w > W) { b.x = W - b.w; b.vx = -Math.abs(b.vx); }
+        if (b.y + b.h > H) { b.y = H - b.h; b.vy = -Math.abs(b.vy); }
+        obs.forEach(o => bounceOff(b, o));
+      }
+      for (let i = 0; i < bodies.length; i++)
+        for (let j = i + 1; j < bodies.length; j++) collide(bodies[i], bodies[j]);
+      bodies.forEach(draw);
+      requestAnimationFrame(step);
+    };
+
+    // Push a body out of a rect along the shallower axis and reflect its velocity.
+    const bounceOff = (b, r) => {
+      if (!overlaps(b, r)) return;
+      const left = b.x + b.w - r.x, right = r.x + r.w - b.x, top = b.y + b.h - r.y, bottom = r.y + r.h - b.y;
+      const m = Math.min(left, right, top, bottom);
+      if (m === left) { b.x -= left; b.vx = -Math.abs(b.vx); }
+      else if (m === right) { b.x += right; b.vx = Math.abs(b.vx); }
+      else if (m === top) { b.y -= top; b.vy = -Math.abs(b.vy); }
+      else { b.y += bottom; b.vy = Math.abs(b.vy); }
+    };
+    const collide = (a, b) => {
+      if (!overlaps(a, b)) return;
+      const ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+      const oy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+      const am = a.drag ? 0 : 1, bm = b.drag ? 0 : 1, tot = am + bm || 1;
+      if (ox < oy) {
+        const s = a.x < b.x ? -1 : 1;
+        a.x += s * ox * am / tot; b.x -= s * ox * bm / tot;
+        if (am && bm) [a.vx, b.vx] = [b.vx, a.vx]; else if (am) a.vx = s * Math.abs(b.vx || a.vx); else b.vx = -s * Math.abs(a.vx || b.vx);
+      } else {
+        const s = a.y < b.y ? -1 : 1;
+        a.y += s * oy * am / tot; b.y -= s * oy * bm / tot;
+        if (am && bm) [a.vy, b.vy] = [b.vy, a.vy]; else if (am) a.vy = s * Math.abs(b.vy || a.vy); else b.vy = -s * Math.abs(a.vy || b.vy);
+      }
+    };
+
+    const init = () => {
+      W = stage.clientWidth; H = stage.clientHeight;
+      const n = Math.max(8, Math.min(TABS.length, Math.round(W * H / 52000)));
+      bodies = TABS.slice(0, n).map(make);
+      bodies.forEach(b => { place(b); draw(b); });
+      setCount();
+      if (!still) requestAnimationFrame(step);
+    };
+    addEventListener("resize", () => {
+      W = stage.clientWidth; H = stage.clientHeight;
+      bodies.forEach(b => { b.x = Math.min(b.x, W - b.w); b.y = Math.min(b.y, H - b.h); draw(b); });
+    });
+    (document.fonts ? document.fonts.ready : Promise.resolve()).then(init);
+
+    /* ---------------- Jump palette ---------------- */
+    const items = [
+      { title: "Top", kind: "This page", href: "#name" },
+      { title: "Extensions", kind: "This page", href: "#made" },
+      ...[...document.querySelectorAll(".thing")].map(t => ({ title: t.querySelector("h3").textContent, kind: "Extension", href: "#" + t.id })),
+      ...[...document.querySelectorAll(".thing .links a")].map(a => ({
+        title: a.closest(".thing").querySelector("h3").textContent + ": " + a.textContent, kind: new URL(a.href).hostname.replace(/^www\./, ""), href: a.href })),
+      { title: "Close all the tabs", kind: "Do it", action: () => [...bodies].forEach(close) },
+      { title: "Reopen closed tabs", kind: "Do it", action: reopenAll },
+    ];
+
+    const dialog = document.querySelector("dialog.palette");
+    const input = dialog.querySelector("input");
+    const list = dialog.querySelector("ul");
+    let results = [], selected = 0;
+
+    const match = (text, q) => {
+      if (!q) return { score: 0, hits: [] };
+      const t = text.toLowerCase(); let ti = 0, score = 0, last = -1; const hits = [];
+      for (const ch of q.toLowerCase()) {
+        if (ch === " ") continue;
+        ti = t.indexOf(ch, ti); if (ti < 0) return null;
+        score += ti - last - 1 + (ti === 0 || /\W/.test(t[ti - 1]) ? 0 : 1);
+        hits.push(ti); last = ti++;
+      }
+      return { score, hits };
+    };
+    const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+    const highlight = (text, hits) => [...text].map((c, i) => hits.includes(i) ? `<mark>${esc(c)}</mark>` : esc(c)).join("");
+
+    const render = () => {
+      const q = input.value.trim();
+      results = items.map(it => ({ it, m: match(it.title, q) })).filter(r => r.m).sort((a, b) => a.m.score - b.m.score);
+      selected = Math.min(selected, Math.max(results.length - 1, 0));
+      list.innerHTML = results.length
+        ? results.map((r, i) => `<li role="option" id="opt-${i}" aria-selected="${i === selected}" data-i="${i}"><span>${highlight(r.it.title, r.m.hits)}</span><span class="kind">${esc(r.it.kind)}</span></li>`).join("")
+        : `<li class="empty" role="presentation">Nothing matches “${esc(q)}”.</li>`;
+      input.setAttribute("aria-activedescendant", results.length ? "opt-" + selected : "");
+      list.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest" });
+    };
+    const open = () => { input.value = ""; selected = 0; render(); dialog.showModal(); input.focus(); };
+    const pick = r => { if (!r) return; dialog.close(); r.it.action ? r.it.action() : go(r.it.href); };
+
+    document.addEventListener("keydown", e => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); dialog.open ? dialog.close() : open(); }
+      else if (e.key === "/" && !dialog.open && !/input|textarea/i.test(document.activeElement.tagName)) { e.preventDefault(); open(); }
+    });
+    document.querySelectorAll("[data-open-palette]").forEach(b => b.addEventListener("click", open));
+    input.addEventListener("input", () => { selected = 0; render(); });
+    input.addEventListener("keydown", e => {
+      const n = Math.max(results.length, 1);
+      if (e.key === "ArrowDown") { e.preventDefault(); selected = (selected + 1) % n; render(); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); selected = (selected - 1 + n) % n; render(); }
+      else if (e.key === "Enter") { e.preventDefault(); pick(results[selected]); }
+    });
+    list.addEventListener("click", e => { const li = e.target.closest("[data-i]"); if (li) pick(results[+li.dataset.i]); });
+    dialog.addEventListener("click", e => { if (e.target === dialog) dialog.close(); });
+  })();
+  </script>
+</body>
+</html>
